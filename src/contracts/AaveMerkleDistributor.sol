@@ -19,6 +19,11 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
   // useful for contracts that hold tokens to be rewarded but don't have any native logic to claim Liquidity Mining rewards
   mapping(address => address) internal _authorizedClaimers;
 
+  modifier onlyAuthorizedClaimers(address claimer, address user) {
+    require(_authorizedClaimers[user] == claimer, 'CLAIMER_UNAUTHORIZED');
+    _;
+  }
+
   function contructor() public {}
 
   function setClaimer(address user, address caller) external onlyOwner {
@@ -76,6 +81,20 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
   /// @inheritdoc IAaveMerkleDistributor
   function claim(TokenClaim[] calldata tokenClaim) external override {
     _claim(tokenClaim, msg.sender, msg.sender);
+  }
+
+  /// @inheritdoc IAaveMerkleDistributor
+  function claim(TokenClaim[] calldata tokenClaim, address receiver) external override {
+    _claim(tokenClaim, msg.sender, receiver);
+  }
+
+  /// @inheritdoc IAaveMerkleDistributor
+  function claimOnBehalfOf(
+    TokenClaim[] calldata tokenClaim,
+    address onBehalfOf,
+    address receiver
+  ) external override onlyAuthorizedClaimers(msg.sender, onBehalfOf) {
+    _claim(tokenClaim, onBehalfOf, receiver);
   }
 
   function _claim(TokenClaim[] calldata tokenClaim, address onBehalfOf, address receiver) internal {
