@@ -4,6 +4,13 @@ pragma solidity ^0.8.0;
 // Allows anyone to claim a token if they exist in a merkle root.
 interface IAaveMerkleDistributor {
   /**
+   * @dev Emitted when a new address is whitelisted as claimer on behalf of a user
+   * @param user The address of the user
+   * @param claimer The address of the claimer
+   */
+  event ClaimerSet(address indexed user, address indexed claimer);
+
+  /**
     * @dev input object with the information to claim a token
     * @param index position inside the merkle tree
     * @param amount quantity to rescue

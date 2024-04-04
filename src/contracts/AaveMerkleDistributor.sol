@@ -15,7 +15,20 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
 
   uint256 public override _nextDistributionId = 0;
 
+  // This mapping allows whitelisted addresses to claim on behalf of others
+  // useful for contracts that hold tokens to be rewarded but don't have any native logic to claim Liquidity Mining rewards
+  mapping(address => address) internal _authorizedClaimers;
+
   function contructor() public {}
+
+  function setClaimer(address user, address caller) external onlyOwner {
+    _authorizedClaimers[user] = caller;
+    emit ClaimerSet(user, caller);
+  }
+
+  function getClaimer(address user) external view returns (address) {
+    return _authorizedClaimers[user];
+  }
 
   /// @inheritdoc IAaveMerkleDistributor
   function getDistribution(
