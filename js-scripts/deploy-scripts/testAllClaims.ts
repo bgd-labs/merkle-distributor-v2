@@ -1,5 +1,5 @@
-import { ethers } from 'ethers';
-import { deploy, provider } from './deploy';
+import {ethers} from 'ethers';
+import {deploy, provider} from './deploy';
 import AaveMerkleDistributor from '../../out/AaveMerkleDistributor.sol/AaveMerkleDistributor.json';
 import fs from 'fs';
 
@@ -35,14 +35,12 @@ export const giveEth = async (addresses: string[]) => {
   await provider.send('tenderly_addBalance', [
     addresses,
     //amount in wei will be added for all wallets
-    ethers.utils.hexValue(
-      ethers.utils.parseUnits('1000', 'ether').toHexString(),
-    ),
+    ethers.utils.hexValue(ethers.utils.parseUnits('1000', 'ether').toHexString()),
   ]);
 };
 
 export const testAllClaims = async () => {
-  const { aaveMerkleDistributorAddress, provider } = await deploy();
+  const {aaveMerkleDistributorAddress, provider} = await deploy();
   const claims = getMerkleTreeJson('./js-scripts/maps/usersMerkleTrees.json');
 
   for (const account of Object.keys(claims)) {

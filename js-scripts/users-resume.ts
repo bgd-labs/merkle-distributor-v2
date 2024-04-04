@@ -90,14 +90,8 @@ const generateUsersJson = (): void => {
     }
   }
 
-  fs.writeFileSync(
-    './js-scripts/maps/usersMerkleTrees.json',
-    JSON.stringify(usersJson),
-  );
-  fs.writeFileSync(
-    './js-scripts/maps/usersAmounts.json',
-    JSON.stringify(lightUsersJson),
-  );
+  fs.writeFileSync('./js-scripts/maps/usersMerkleTrees.json', JSON.stringify(usersJson));
+  fs.writeFileSync('./js-scripts/maps/usersAmounts.json', JSON.stringify(lightUsersJson));
 };
 
 generateUsersJson();

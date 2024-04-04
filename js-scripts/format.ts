@@ -2,11 +2,11 @@ import aaveRescueMap from './maps/aaveRescueMap.json';
 import uniRescueMap from './maps/uniRescueMap.json';
 import usdtRescueMap from './maps/usdtRescueMap.json';
 import stkAaveRescueMap from './maps/stkAaveRescueMap.json';
-import { normalize } from '@aave/math-utils';
+import {normalize} from '@aave/math-utils';
 import fs from 'fs';
 
 const format = (
-  jsonObj: Record<string, { amount: string; label?: string }>,
+  jsonObj: Record<string, {amount: string; label?: string}>,
   name: string,
   decimals: number,
 ) => {

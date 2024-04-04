@@ -1,18 +1,25 @@
 {
-  "singleQuote": true,
-  "printWidth": 80,
-  "trailingComma": "all",
   "overrides": [
     {
       "files": "*.sol",
       "options": {
-        "printWidth": 80,
+        "printWidth": 100,
+        "tabWidth": 2,
         "useTabs": false,
-        "tabWidth": 4,
-        "singleQuote": false,
-        "bracketSpacing": true,
-        "explicitTypes": "always"
+        "singleQuote": true,
+        "bracketSpacing": false
+      }
+    },
+    {
+      "files": "*.ts",
+      "options": {
+        "printWidth": 100,
+        "tabWidth": 2,
+        "useTabs": false,
+        "singleQuote": true,
+        "bracketSpacing": false
       }
     }
-  ]
+  ],
+  "plugins": ["prettier-plugin-solidity"]
 }

@@ -4,7 +4,7 @@ pragma solidity 0.7.5;
  * @dev Interface of the ERC20 standard as defined in the EIP.
  * From https://github.com/OpenZeppelin/openzeppelin-contracts
  */
- interface IERC20 {
+interface IERC20 {
   /**
    * @dev Returns the amount of tokens in existence.
    */
@@ -58,11 +58,7 @@ pragma solidity 0.7.5;
    *
    * Emits a {Transfer} event.
    */
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
   /**
    * @dev Emitted when `value` tokens are moved from one account (`from`) to

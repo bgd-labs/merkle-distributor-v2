@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { BigNumber, ethers, providers } from 'ethers';
+import {BigNumber, ethers, providers} from 'ethers';
 
 import govV2Abi from './abis/govV2.json';
 import * as AaveGovernanceV2 from '../../lib/aave-address-book/src/ts/AaveGovernanceV2';
@@ -14,8 +14,7 @@ import IGovernancePowerDelegationToken from '../../out/IGovernancePowerDelegatio
 
 const TENDERLY_FORK_URL = process.env.TENDERLY_FORK_URL;
 
-if (!TENDERLY_FORK_URL)
-  throw new Error('you have to set a GOV_CHAIN_TENDERLY_FORK_URL');
+if (!TENDERLY_FORK_URL) throw new Error('you have to set a GOV_CHAIN_TENDERLY_FORK_URL');
 
 export const provider = new providers.StaticJsonRpcProvider(TENDERLY_FORK_URL);
 
@@ -40,10 +39,8 @@ const STK_SYMBOL = 'stkAAVE';
 const STK_DECIMALS = 18;
 
 // autonomous proposal configurations
-const SHORT_IPFS =
-  '0x22f22ad910127d3ca76dc642f94db34397f94ca969485a216b9d82387808cdfa';
-const LONG_IPFS =
-  '0xd0b98a12db1859322818b5943127735ca545d437d09dc0aa7dbcf9e66ac01569';
+const SHORT_IPFS = '0x22f22ad910127d3ca76dc642f94db34397f94ca969485a216b9d82387808cdfa';
+const LONG_IPFS = '0xd0b98a12db1859322818b5943127735ca545d437d09dc0aa7dbcf9e66ac01569';
 
 export const giveEthToWhales = async () => {
   const WALLETS = [AAVE_WHALE, AAVE_WHALE_2];
@@ -51,9 +48,7 @@ export const giveEthToWhales = async () => {
   await provider.send('tenderly_addBalance', [
     WALLETS,
     //amount in wei will be added for all wallets
-    ethers.utils.hexValue(
-      ethers.utils.parseUnits('1000', 'ether').toHexString(),
-    ),
+    ethers.utils.hexValue(ethers.utils.parseUnits('1000', 'ether').toHexString()),
   ]);
 };
 
@@ -69,16 +64,12 @@ export const deploy = async () => {
     AaveMerkleDistributor.bytecode,
     provider.getSigner(AAVE_WHALE),
   );
-  const aaveMerkleDistributorContract =
-    await aaveMerkleDistributorFactory.deploy();
-  const changeDistributorOwnerTx =
-    await aaveMerkleDistributorContract.transferOwnership(
-      AaveGovernanceV2.SHORT_EXECUTOR,
-    );
-  await changeDistributorOwnerTx.wait();
-  console.log(
-    `[AaveMerkleDistributor]: ${aaveMerkleDistributorContract.address}`,
+  const aaveMerkleDistributorContract = await aaveMerkleDistributorFactory.deploy();
+  const changeDistributorOwnerTx = await aaveMerkleDistributorContract.transferOwnership(
+    AaveGovernanceV2.SHORT_EXECUTOR,
   );
+  await changeDistributorOwnerTx.wait();
+  console.log(`[AaveMerkleDistributor]: ${aaveMerkleDistributorContract.address}`);
 
   // deploy AaveTokenImpl
   const aaveTokenV2Factory = new ethers.ContractFactory(
@@ -107,9 +98,7 @@ export const deploy = async () => {
     STK_SYMBOL,
     STK_DECIMALS,
   );
-  console.log(
-    `[StkAaveTokenV2Rev4Impl]: ${stkAaveTokenV2Rev4Contract.address}`,
-  );
+  console.log(`[StkAaveTokenV2Rev4Impl]: ${stkAaveTokenV2Rev4Contract.address}`);
 
   // deploy LendToAaveMigrator
   const lendToAaveMigratorFactory = new ethers.ContractFactory(
@@ -122,9 +111,7 @@ export const deploy = async () => {
     LEND_TOKEN,
     LEND_AAVE_RATIO,
   );
-  console.log(
-    `[LendToAaveMigratorImpl]: ${lendToAaveMigratorContract.address}`,
-  );
+  console.log(`[LendToAaveMigratorImpl]: ${lendToAaveMigratorContract.address}`);
 
   //--------------------------------------------------------------------------------------------------------------------
   //                                            DEPLOY PAYLOADS
@@ -196,19 +183,14 @@ export const deploy = async () => {
   let currentBlockNumber = await provider.getBlockNumber();
   let currentBlock = await provider.getBlock(currentBlockNumber);
   await provider.send('evm_increaseTime', [
-    ethers.BigNumber.from(creationTimestamp)
-      .sub(currentBlock.timestamp)
-      .add(1)
-      .toNumber(),
+    ethers.BigNumber.from(creationTimestamp).sub(currentBlock.timestamp).add(1).toNumber(),
   ]);
 
   // create proposals
   const createProposalsTx = await autonomousProposalContract.create();
   await createProposalsTx.wait();
-  const shortProposalId =
-    await autonomousProposalContract.shortExecutorProposalId();
-  const longProposalId =
-    await autonomousProposalContract.longExecutorProposalId();
+  const shortProposalId = await autonomousProposalContract.shortExecutorProposalId();
+  const longProposalId = await autonomousProposalContract.longExecutorProposalId();
   console.log(`
     ShortProposalId: ${shortProposalId}
     LongProposalId: ${longProposalId}
@@ -222,41 +204,26 @@ export const deploy = async () => {
   );
 
   // get proposals
-  const shortProposal = await govContractAaveWhale.getProposalById(
-    shortProposalId,
-  );
-  const longProposal = await govContractAaveWhale.getProposalById(
-    longProposalId,
-  );
+  const shortProposal = await govContractAaveWhale.getProposalById(shortProposalId);
+  const longProposal = await govContractAaveWhale.getProposalById(longProposalId);
 
   const votingDelay = await govContractAaveWhale.getVotingDelay();
 
   currentBlockNumber = await provider.getBlockNumber();
   currentBlock = await provider.getBlock(currentBlockNumber);
-  await provider.send('evm_increaseBlocks', [
-    BigNumber.from(votingDelay).add(1).toHexString(),
-  ]);
+  await provider.send('evm_increaseBlocks', [BigNumber.from(votingDelay).add(1).toHexString()]);
 
   // vote on proposals
-  const voteShortTx = await govContractAaveWhale.submitVote(
-    shortProposalId,
-    true,
-  );
+  const voteShortTx = await govContractAaveWhale.submitVote(shortProposalId, true);
   await voteShortTx.wait();
-  const voteLongTx = await govContractAaveWhale.submitVote(
-    longProposalId,
-    true,
-  );
+  const voteLongTx = await govContractAaveWhale.submitVote(longProposalId, true);
   await voteLongTx.wait();
   const govContractAaveWhale2 = new ethers.Contract(
     AaveGovernanceV2.GOV,
     govV2Abi,
     provider.getSigner(AAVE_WHALE_2),
   );
-  const voteLongTx2 = await govContractAaveWhale2.submitVote(
-    longProposalId,
-    true,
-  );
+  const voteLongTx2 = await govContractAaveWhale2.submitVote(longProposalId, true);
   await voteLongTx2.wait();
 
   // forward time to end of vote for short proposal
@@ -271,16 +238,11 @@ export const deploy = async () => {
   const queueShortTx = await govContractAaveWhale.queue(shortProposalId);
   await queueShortTx.wait();
   // forward time for short proposal execution
-  const shortQueuedProposal = await govContractAaveWhale.getProposalById(
-    shortProposalId,
-  );
+  const shortQueuedProposal = await govContractAaveWhale.getProposalById(shortProposalId);
   currentBlockNumber = await provider.getBlockNumber();
   currentBlock = await provider.getBlock(currentBlockNumber);
   await provider.send('evm_increaseTime', [
-    BigNumber.from(shortQueuedProposal.executionTime)
-      .sub(currentBlock.timestamp)
-      .add(1)
-      .toNumber(),
+    BigNumber.from(shortQueuedProposal.executionTime).sub(currentBlock.timestamp).add(1).toNumber(),
   ]);
 
   // execute short proposal
@@ -303,16 +265,11 @@ export const deploy = async () => {
   await queueLongTx.wait();
 
   // forward time for long proposal execution
-  const longQueuedProposal = await govContractAaveWhale.getProposalById(
-    longProposalId,
-  );
+  const longQueuedProposal = await govContractAaveWhale.getProposalById(longProposalId);
   currentBlockNumber = await provider.getBlockNumber();
   currentBlock = await provider.getBlock(currentBlockNumber);
   await provider.send('evm_increaseTime', [
-    BigNumber.from(longQueuedProposal.executionTime)
-      .sub(currentBlock.timestamp)
-      .add(1)
-      .toNumber(),
+    BigNumber.from(longQueuedProposal.executionTime).sub(currentBlock.timestamp).add(1).toNumber(),
   ]);
 
   // execute long proposal

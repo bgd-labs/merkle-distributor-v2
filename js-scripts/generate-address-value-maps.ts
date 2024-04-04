@@ -1,9 +1,9 @@
-import { BigNumber, Event, providers } from 'ethers';
-import { IERC20__factory } from './typechain/IERC20__factory';
+import {BigNumber, Event, providers} from 'ethers';
+import {IERC20__factory} from './typechain/IERC20__factory';
 import fs from 'fs';
-import { ChainId } from '@aave/contract-helpers';
-import { PromisePool } from '@supercharge/promise-pool';
-import { fetchLabel, wait } from './label-map';
+import {ChainId} from '@aave/contract-helpers';
+import {PromisePool} from '@supercharge/promise-pool';
+import {fetchLabel, wait} from './label-map';
 
 const amountsFilePath = `./js-scripts/maps/amountsByContract.txt`;
 
@@ -27,18 +27,13 @@ async function fetchTxns(
   network: keyof typeof JSON_RPC_PROVIDER,
   name: string,
   validateEvent?: (events: Event[]) => Promise<Event[]>,
-): Promise<Record<string, { amount: string; txHash: string[] }>> {
+): Promise<Record<string, {amount: string; txHash: string[]}>> {
   const token = TOKENS[symbol];
-  const provider = new providers.StaticJsonRpcProvider(
-    JSON_RPC_PROVIDER[network],
-  );
+  const provider = new providers.StaticJsonRpcProvider(JSON_RPC_PROVIDER[network]);
   const contract = IERC20__factory.connect(token, provider);
   const event = contract.filters.Transfer(null, to);
 
-  async function getPastLogs(
-    fromBlock: number,
-    toBlock: number,
-  ): Promise<Event[]> {
+  async function getPastLogs(fromBlock: number, toBlock: number): Promise<Event[]> {
     console.log(`fromBlock: ${fromBlock} toBlock: ${toBlock}`);
     if (fromBlock <= toBlock) {
       try {
@@ -50,7 +45,7 @@ async function fetchTxns(
           // alchemy specific solution, that optimizes, taking into account
           // alchemy error information
           // @ts-expect-error
-          const { 0: newFromBlock, 1: newToBlock } = error.error.message
+          const {0: newFromBlock, 1: newToBlock} = error.error.message
             .split('[')[1]
             .split(']')[0]
             .split(', ');
@@ -66,10 +61,7 @@ async function fetchTxns(
             Number(newToBlock),
           );
 
-          const arr1 = await getPastLogs(
-            Number(newFromBlock),
-            Number(newToBlock),
-          );
+          const arr1 = await getPastLogs(Number(newFromBlock), Number(newToBlock));
           const arr2 = await getPastLogs(Number(newToBlock) + 1, toBlock);
           return [...arr1, ...arr2];
         } else {
@@ -90,8 +82,7 @@ async function fetchTxns(
   if (validateEvent) events = await validateEvent(events);
 
   // Write events map of address value to json
-  const addressValueMap: Record<string, { amount: string; txHash: string[] }> =
-    {};
+  const addressValueMap: Record<string, {amount: string; txHash: string[]}> = {};
   let totalValue = BigNumber.from(0);
   let latestBlockNumber = 0;
   events.forEach((e: Event) => {
@@ -110,9 +101,7 @@ async function fetchTxns(
           value = BigNumber.from(e.args.value.toString()).div(100);
         }
         if (addressValueMap[e.args.from]) {
-          const aggregatedValue = value
-            .add(addressValueMap[e.args.from].amount)
-            .toString();
+          const aggregatedValue = value.add(addressValueMap[e.args.from].amount).toString();
           addressValueMap[e.args.from].amount = aggregatedValue;
           addressValueMap[e.args.from].txHash.push(e.transactionHash);
         } else {
@@ -137,10 +126,7 @@ async function fetchTxns(
 async function retryTillSuccess(
   provider: providers.Provider,
   event: Event,
-  fn: (
-    event: Event,
-    provider: providers.Provider,
-  ) => Promise<Event | undefined>,
+  fn: (event: Event, provider: providers.Provider) => Promise<Event | undefined>,
 ): Promise<Event | undefined> {
   try {
     return fn(event, provider);
@@ -158,9 +144,7 @@ async function validateMigrationEvents(events: Event[]): Promise<Event[]> {
     const receipt = await provider.getTransactionReceipt(txHash);
     if (
       !receipt.logs.some((log) =>
-        log.topics.includes(
-          '0x5c5c7a8e729fa9bfdd1ecad2e8f7f3db1d29acf43c1e6036f34fd68621d15c81',
-        ),
+        log.topics.includes('0x5c5c7a8e729fa9bfdd1ecad2e8f7f3db1d29acf43c1e6036f34fd68621d15c81'),
       )
     ) {
       return event;
@@ -169,7 +153,7 @@ async function validateMigrationEvents(events: Event[]): Promise<Event[]> {
 
   const provider = new providers.StaticJsonRpcProvider(process.env.RPC_MAINNET);
 
-  const { results, errors } = await PromisePool.for(events)
+  const {results, errors} = await PromisePool.for(events)
     .withConcurrency(10)
     .process(async (event) => {
       return retryTillSuccess(provider, event, validate);
@@ -188,9 +172,7 @@ async function validateStkAaveEvents(events: Event[]): Promise<Event[]> {
     const receipt = await provider.getTransactionReceipt(txHash);
     if (
       !receipt.logs.some((log) =>
-        log.topics.includes(
-          '0x5dac0c1b1112564a045ba943c9d50270893e8e826c49be8e7073adc713ab7bd7',
-        ),
+        log.topics.includes('0x5dac0c1b1112564a045ba943c9d50270893e8e826c49be8e7073adc713ab7bd7'),
       )
     ) {
       return event;
@@ -198,7 +180,7 @@ async function validateStkAaveEvents(events: Event[]): Promise<Event[]> {
   }
 
   const provider = new providers.StaticJsonRpcProvider(process.env.RPC_MAINNET);
-  const { results, errors } = await PromisePool.for(events)
+  const {results, errors} = await PromisePool.for(events)
     .withConcurrency(10)
     .process(async (event, ix) => {
       console.log(`validating ${ix}`);
@@ -211,20 +193,15 @@ async function validateStkAaveEvents(events: Event[]): Promise<Event[]> {
 }
 
 async function generateAndSaveMap(
-  mappedContracts: Record<string, { amount: string; txHash: string[] }>[],
+  mappedContracts: Record<string, {amount: string; txHash: string[]}>[],
   name: string,
 ): Promise<void> {
-  const aggregatedMapping: Record<
-    string,
-    { amount: string; txns: string[]; label?: string }
-  > = {};
+  const aggregatedMapping: Record<string, {amount: string; txns: string[]; label?: string}> = {};
   const labels = require('./labels/labels.json');
   for (let mappedContract of mappedContracts) {
     for (let address of Object.keys(mappedContract)) {
       if (aggregatedMapping[address]) {
-        const aggregatedValue = BigNumber.from(
-          mappedContract[address].amount.toString(),
-        )
+        const aggregatedValue = BigNumber.from(mappedContract[address].amount.toString())
           .add(aggregatedMapping[address].amount)
           .toString();
         aggregatedMapping[address].amount = aggregatedValue;
@@ -234,8 +211,7 @@ async function generateAndSaveMap(
         ];
       } else {
         aggregatedMapping[address] = {} as any;
-        aggregatedMapping[address].amount =
-          mappedContract[address].amount.toString();
+        aggregatedMapping[address].amount = mappedContract[address].amount.toString();
         aggregatedMapping[address].txns = [...mappedContract[address].txHash];
         const label = await fetchLabel(address, labels);
         if (label) {
@@ -252,39 +228,21 @@ async function generateAndSaveMap(
 async function generateAaveMap() {
   // don't use this as it was the initial minting from aave to the migrator, so no need to rescue anything from here
   // await fetchTxns('AAVE', migrator, ChainId.mainnet);
-  const mappedContracts: Record<
-    string,
-    { amount: string; txHash: string[] }
-  >[] = await Promise.all([
-    fetchTxns(
-      'LEND',
-      migrator,
-      ChainId.mainnet,
-      'LEND-MIGRATOR',
-      validateMigrationEvents,
-    ),
+  const mappedContracts: Record<string, {amount: string; txHash: string[]}>[] = await Promise.all([
+    fetchTxns('LEND', migrator, ChainId.mainnet, 'LEND-MIGRATOR', validateMigrationEvents),
     fetchTxns('AAVE', TOKENS.AAVE, ChainId.mainnet, 'AAVE-AAVE'),
     // can't recuperate aave sent to lend as lend is not upgreadable
     // fetchTxns('AAVE', TOKENS.LEND, ChainId.mainnet, 'AAVE-LEND'),
     fetchTxns('LEND', TOKENS.AAVE, ChainId.mainnet, 'LEND-AAVE'),
     fetchTxns('LEND', TOKENS.LEND, ChainId.mainnet, 'LEND-LEND'),
-    fetchTxns(
-      'AAVE',
-      TOKENS.STKAAVE,
-      ChainId.mainnet,
-      'AAVE-STKAAVE',
-      validateStkAaveEvents,
-    ),
+    fetchTxns('AAVE', TOKENS.STKAAVE, ChainId.mainnet, 'AAVE-STKAAVE', validateStkAaveEvents),
   ]);
 
   return generateAndSaveMap(mappedContracts, 'aave');
 }
 
 async function generateStkAaveMap() {
-  const mappedContracts: Record<
-    string,
-    { amount: string; txHash: string[] }
-  >[] = await Promise.all([
+  const mappedContracts: Record<string, {amount: string; txHash: string[]}>[] = await Promise.all([
     fetchTxns('STKAAVE', TOKENS.STKAAVE, ChainId.mainnet, 'STKAAVE-STKAAVE'),
   ]);
 
@@ -294,10 +252,9 @@ async function generateStkAaveMap() {
 async function generateUniMap() {
   // don't use this as it was the initial minting from aave to the migrator, so no need to rescue anything from here
   // await fetchTxns('AAVE', migrator, ChainId.mainnet);
-  const mapedContracts: Record<string, { amount: string; txHash: string[] }>[] =
-    await Promise.all([
-      fetchTxns('UNI', TOKENS.AAVE, ChainId.mainnet, 'UNI-AAVE'),
-    ]);
+  const mapedContracts: Record<string, {amount: string; txHash: string[]}>[] = await Promise.all([
+    fetchTxns('UNI', TOKENS.AAVE, ChainId.mainnet, 'UNI-AAVE'),
+  ]);
 
   return generateAndSaveMap(mapedContracts, 'uni');
 }
@@ -305,10 +262,9 @@ async function generateUniMap() {
 async function generateUsdtMap() {
   // don't use this as it was the initial minting from aave to the migrator, so no need to rescue anything from here
   // await fetchTxns('AAVE', migrator, ChainId.mainnet);
-  const mapedContracts: Record<string, { amount: string; txHash: string[] }>[] =
-    await Promise.all([
-      fetchTxns('USDT', TOKENS.AAVE, ChainId.mainnet, 'USDT-AAVE'),
-    ]);
+  const mapedContracts: Record<string, {amount: string; txHash: string[]}>[] = await Promise.all([
+    fetchTxns('USDT', TOKENS.AAVE, ChainId.mainnet, 'USDT-AAVE'),
+  ]);
 
   return generateAndSaveMap(mapedContracts, 'usdt');
 }

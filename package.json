@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "lint:fix": "prettier . --write",
     "deploy:tenderly:test": "env-cmd ts-node js-scripts/deploy-scripts/testAllClaims.ts",
     "deploy:tenderly": "env-cmd ts-node js-scripts/deploy-scripts/deploy.ts",
     "generate:users-json": "ts-node js-scripts/users-resume.ts",
@@ -60,8 +61,8 @@
     "ethers": "^5.6.6",
     "isomorphic-unfetch": "^3.1.0",
     "npm": "^8.10.0",
-    "prettier": "^2.6.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "prettier": "3.2.5",
+    "prettier-plugin-solidity": "1.3.1",
     "ts-node": "^10.7.0",
     "tslib": "^2.4.0",
     "typescript": "^4.6.4"

@@ -1,8 +1,8 @@
-import { BigNumber, utils } from 'ethers';
+import {BigNumber, utils} from 'ethers';
 import BalanceTree from './merkle-trees/balance-tree';
-import { normalize } from '@aave/math-utils';
+import {normalize} from '@aave/math-utils';
 
-const { isAddress, getAddress } = utils;
+const {isAddress, getAddress} = utils;
 
 // This is the blob that gets distributed and pinned to IPFS.
 // It is completely sufficient for recreating the entire merkle tree.
@@ -26,9 +26,9 @@ interface MerkleDistributorInfo {
 }
 
 type OldFormat = {
-  [account: string]: { amount: string; label?: string; txns: string[] };
+  [account: string]: {amount: string; label?: string; txns: string[]};
 };
-type NewFormat = { address: string; earnings: string; reasons: string };
+type NewFormat = {address: string; earnings: string; reasons: string};
 
 export function parseBalanceMap(
   balances: OldFormat | NewFormat[],
@@ -49,17 +49,16 @@ export function parseBalanceMap(
   const dataByAddress = balancesInNewFormat.reduce<{
     [address: string]: {
       amount: BigNumber;
-      flags?: { [flag: string]: boolean };
+      flags?: {[flag: string]: boolean};
     };
-  }>((memo, { address: account, earnings, reasons }) => {
+  }>((memo, {address: account, earnings, reasons}) => {
     if (!isAddress(account)) {
       throw new Error(`Found invalid address: ${account}`);
     }
     const parsed = getAddress(account);
     if (memo[parsed]) throw new Error(`Duplicate address: ${parsed}`);
     const parsedNum = BigNumber.from(earnings);
-    if (parsedNum.lte(0))
-      throw new Error(`Invalid amount for account: ${account}`);
+    if (parsedNum.lte(0)) throw new Error(`Invalid amount for account: ${account}`);
 
     const flags = {
       isSOCKS: reasons.includes('socks'),
@@ -67,7 +66,7 @@ export function parseBalanceMap(
       isUser: reasons.includes('user'),
     };
 
-    memo[parsed] = { amount: parsedNum, ...(reasons === '' ? {} : { flags }) };
+    memo[parsed] = {amount: parsedNum, ...(reasons === '' ? {} : {flags})};
     return memo;
   }, {});
 
@@ -88,16 +87,16 @@ export function parseBalanceMap(
       amountInWei: string;
       index: number;
       proof: string[];
-      flags?: { [flag: string]: boolean };
+      flags?: {[flag: string]: boolean};
     };
   }>((memo, address, index) => {
-    const { amount, flags } = dataByAddress[address];
+    const {amount, flags} = dataByAddress[address];
     memo[address] = {
       index,
       amountInWei: amount.toString(),
       amount: `${normalize(amount.toString(), decimals)} ${name}`,
       proof: tree.getProof(index, address, amount),
-      ...(flags ? { flags } : {}),
+      ...(flags ? {flags} : {}),
     };
     return memo;
   }, {});

@@ -5,18 +5,20 @@ The logic has not changed, and both use [OpenZeppelin MerkleProof](https://githu
 The main difference between the two then is the addition of:
 
 - Token rescue methods:
+
 ```
 function emergencyTokenTransfer(address erc20Token, address to, uint256 amount) external;
 function emergencyEtherTransfer(address to, uint256 amount) external;
 ```
+
 These methods can only be called by the owner of the distributor (ShortExecutor).
 
-
 - Distributions:
-The distributions is a system that enables our contract to support multiple rescues by adding new merkleTrees and tokens and encapsulating
-the token rescue information in it.
-By adding distributions into the code we need to add the `claimedBitMap`, `merkleRoot` and `token` into a struct so that we can index it
-by distributionId.
+  The distributions is a system that enables our contract to support multiple rescues by adding new merkleTrees and tokens and encapsulating
+  the token rescue information in it.
+  By adding distributions into the code we need to add the `claimedBitMap`, `merkleRoot` and `token` into a struct so that we can index it
+  by distributionId.
+
 ```
 /**
 * @dev struct that contains the information for a distributionId id
@@ -32,7 +34,9 @@ struct Distribution {
 }
 mapping(uint256 => Distribution) public _distributions;
 ```
+
 To add more distributions (new token rescues) it can only be done by owner the owner of the AaveMerkleTreeDistributor (ShortExecutor) by calling
+
 ```
 function addDistributions(address[] memory tokens, bytes32[] memory merkleRoots) external;
 ```
@@ -40,8 +44,9 @@ function addDistributions(address[] memory tokens, bytes32[] memory merkleRoots)
 With this system, we can also have different rescues of the same token generated (merkleTrees) at different times.
 
 - Batch Claiming
-As we can have multiple rescue distributions at the same time, a user could be eligible for rescue in more than one distribution.
-With batch claiming said user could claim its rescued tokens with one transaction.
+  As we can have multiple rescue distributions at the same time, a user could be eligible for rescue in more than one distribution.
+  With batch claiming said user could claim its rescued tokens with one transaction.
+
 ```
 /**
 * @dev input object with the information to claim a token
@@ -65,7 +70,8 @@ function claim(TokenClaim[] calldata claim) external;
 ```
 
 - Forcing wallet of the owner to be the claimer
-By using msg.sender as account, we enforce that only the owners can claim its rescued tokens.
+  By using msg.sender as account, we enforce that only the owners can claim its rescued tokens.
+
 ```
 bytes32 node = keccak256(abi.encodePacked(claim[i].index, msg.sender, claim[i].amount));
 ```

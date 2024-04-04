@@ -23,7 +23,7 @@ jobs:
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
         run: echo "key length" ${#CERTORAKEY}
-      
+
       - name: Install python
         uses: actions/setup-python@v2
         with: { python-version: 3.9 }
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install certora cli
         run: pip install certora-cli
-        
+
       - name: Install solc
         run: |
           wget https://github.com/ethereum/solidity/releases/download/v0.8.0/solc-static-linux
@@ -43,14 +43,14 @@ jobs:
           wget https://github.com/ethereum/solidity/releases/download/v0.7.5/solc-static-linux
           chmod +x solc-static-linux
           sudo mv solc-static-linux /usr/local/bin/solc7.5
-      
+
       - name: Verify rule ${{ matrix.rule }}
         run: |
           echo "key length" ${#CERTORAKEY}
           sh certora/scripts/${{ matrix.rule }}
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
-          
+
     strategy:
       fail-fast: false
       max-parallel: 16
