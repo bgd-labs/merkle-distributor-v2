@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
+import {IRescuable} from 'solidity-utils/contracts/utils/interfaces/IRescuable.sol';
 import {IAaveMerkleDistributor} from '../src/contracts/interfaces/IAaveMerkleDistributor.sol';
 import {AaveMerkleDistributor} from '../src/contracts/AaveMerkleDistributor.sol';
 
@@ -441,7 +442,7 @@ contract AaveMerkleDistributorTest is Test {
 
   function testEmergencyTokenTransfer() public {
     uint256 prevBalance = AAVE_TOKEN.balanceOf(address(aaveMerkleDistributor));
-    aaveMerkleDistributor.emergencyTokenTransfer(address(AAVE_TOKEN), address(3), 50 ether);
+    IRescuable(address(aaveMerkleDistributor)).emergencyTokenTransfer(address(AAVE_TOKEN), address(3), 50 ether);
 
     assertEq(AAVE_TOKEN.balanceOf(address(3)), 50 ether);
     assertEq(AAVE_TOKEN.balanceOf(address(aaveMerkleDistributor)), prevBalance - 50 ether);
@@ -450,8 +451,8 @@ contract AaveMerkleDistributorTest is Test {
   function testEmegencyTokenTransferWhenNotOwner() public {
     vm.prank(address(1));
 
-    vm.expectRevert(bytes('Ownable: caller is not the owner'));
-    aaveMerkleDistributor.emergencyTokenTransfer(address(AAVE_TOKEN), address(3), 50 ether);
+    vm.expectRevert(bytes('ONLY_RESCUE_GUARDIAN'));
+    IRescuable(address(aaveMerkleDistributor)).emergencyTokenTransfer(address(AAVE_TOKEN), address(3), 50 ether);
   }
 
   function testEmergencyEthTransfer() public {
@@ -459,7 +460,7 @@ contract AaveMerkleDistributorTest is Test {
     uint256 prevBalance = address(3).balance;
     deal(address(aaveMerkleDistributor), ethAmount);
 
-    aaveMerkleDistributor.emergencyEtherTransfer(address(3), ethAmount);
+    IRescuable(address(aaveMerkleDistributor)).emergencyEtherTransfer(address(3), ethAmount);
 
     assertEq(address(3).balance, prevBalance + ethAmount);
     assertEq(address(aaveMerkleDistributor).balance, 0 ether);
@@ -469,7 +470,7 @@ contract AaveMerkleDistributorTest is Test {
     deal(address(aaveMerkleDistributor), 50 ether);
     vm.prank(address(1));
 
-    vm.expectRevert(bytes('Ownable: caller is not the owner'));
-    aaveMerkleDistributor.emergencyEtherTransfer(address(3), 50 ether);
+    vm.expectRevert(bytes('ONLY_RESCUE_GUARDIAN'));
+    IRescuable(address(aaveMerkleDistributor)).emergencyEtherTransfer(address(3), 50 ether);
   }
 }

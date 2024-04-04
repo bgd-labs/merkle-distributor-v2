@@ -4,10 +4,11 @@ pragma solidity ^0.8.0;
 import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {Ownable} from 'solidity-utils/contracts/oz-common/Ownable.sol';
+import {Rescuable} from 'solidity-utils/contracts/utils/Rescuable.sol';
 import {MerkleProof} from './dependencies/openZeppelin/MerkleProof.sol';
 import {IAaveMerkleDistributor} from './interfaces/IAaveMerkleDistributor.sol';
 
-contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor {
+contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
   using SafeERC20 for IERC20;
 
   mapping(uint256 => Distribution) public _distributions;
@@ -93,20 +94,6 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor {
     }
   }
 
-  /// @inheritdoc IAaveMerkleDistributor
-  function emergencyTokenTransfer(
-    address erc20Token,
-    address to,
-    uint256 amount
-  ) external override onlyOwner {
-    IERC20(erc20Token).safeTransfer(to, amount);
-  }
-
-  /// @inheritdoc IAaveMerkleDistributor
-  function emergencyEtherTransfer(address to, uint256 amount) external override onlyOwner {
-    _safeTransferETH(to, amount);
-  }
-
   /**
    * @dev set claimed as true for index on distributionId
    * @param index indicating which node of the tree needs to be set as true
@@ -128,5 +115,9 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor {
   function _safeTransferETH(address to, uint256 value) internal {
     (bool success, ) = to.call{value: value}(new bytes(0));
     require(success, 'ETH_TRANSFER_FAILED');
+  }
+
+  function whoCanRescue() public view override returns (address) {
+    return owner();
   }
 }
