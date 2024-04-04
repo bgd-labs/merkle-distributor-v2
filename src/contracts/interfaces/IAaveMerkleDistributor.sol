@@ -94,7 +94,7 @@ interface IAaveMerkleDistributor {
   /**
    * @dev Claim the given amount of the token to the given address. Reverts if the inputs are invalid.
    * @param tokenClaim array of the information of the tokens to claim
-   * @param onBehalfOf address of the eligible receiver of the claim
+   * @param onBehalfOf address of the owner of the claim
    * @param receiver address receiving the claim
    */
   function claimOnBehalfOf(
