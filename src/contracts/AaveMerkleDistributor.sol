@@ -18,6 +18,7 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
   // This mapping allows whitelisted addresses to claim on behalf of others
   // useful for contracts that hold tokens to be rewarded but don't have any native logic to claim Liquidity Mining rewards
   mapping(address => address) internal _authorizedClaimers;
+  mapping(address => mapping(address => uint256)) internal _pendingClaims;
 
   modifier onlyAuthorizedClaimers(address claimer, address user) {
     require(_authorizedClaimers[user] == claimer, 'CLAIMER_UNAUTHORIZED');
@@ -33,6 +34,37 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
 
   function getClaimer(address user) external view returns (address) {
     return _authorizedClaimers[user];
+  }
+
+  function getPendingClaim(address user, address asset) external view returns (uint256) {
+    return _pendingClaims[user][asset];
+  }
+
+  /**
+   * Redeems the claim without transferring any tokens
+   */
+  function redeemClaim(
+    TokenClaim[] calldata tokenClaim,
+    address onBehalfOf
+  ) external onlyAuthorizedClaimers(msg.sender, onBehalfOf) {
+    for (uint256 i = 0; i < tokenClaim.length; i++) {
+      // redeem claim
+      _redeemClaim(tokenClaim[i], onBehalfOf);
+      // update internal accounting
+      _pendingClaims[onBehalfOf][_distributions[tokenClaim[i].distributionId].token] += tokenClaim[
+        i
+      ].amount;
+    }
+  }
+
+  function redeemPendingClaim(
+    address asset,
+    address onBehalfOf,
+    address receiver,
+    uint256 amount
+  ) external onlyAuthorizedClaimers(msg.sender, onBehalfOf) {
+    _pendingClaims[onBehalfOf][asset] -= amount;
+    IERC20(asset).safeTransfer(receiver, tokenClaim[i].amount);
   }
 
   /// @inheritdoc IAaveMerkleDistributor
@@ -97,42 +129,41 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
     _claim(tokenClaim, onBehalfOf, receiver);
   }
 
+  function _redeemClaim(TokenClaim calldata tokenClaim, address onBehalfOf) internal {
+    require(
+      tokenClaim.distributionId < _nextDistributionId,
+      'MerkleDistributor: Distribution dont exist'
+    );
+    require(
+      !isClaimed(tokenClaim.index, tokenClaim.distributionId),
+      'MerkleDistributor: Drop already claimed.'
+    );
+
+    // Verify the merkle proof.
+    bytes32 node = keccak256(abi.encodePacked(tokenClaim.index, onBehalfOf, tokenClaim.amount));
+    require(
+      MerkleProof.verify(
+        tokenClaim.merkleProof,
+        _distributions[tokenClaim.distributionId].merkleRoot,
+        node
+      ),
+      'MerkleDistributor: Invalid proof.'
+    );
+
+    // Mark it claimed
+    _setClaimed(tokenClaim.index, tokenClaim.distributionId);
+
+    emit Claimed(tokenClaim.index, onBehalfOf, tokenClaim.amount, tokenClaim.distributionId);
+  }
+
   function _claim(TokenClaim[] calldata tokenClaim, address onBehalfOf, address receiver) internal {
     for (uint256 i = 0; i < tokenClaim.length; i++) {
-      require(
-        tokenClaim[i].distributionId < _nextDistributionId,
-        'MerkleDistributor: Distribution dont exist'
-      );
-      require(
-        !isClaimed(tokenClaim[i].index, tokenClaim[i].distributionId),
-        'MerkleDistributor: Drop already claimed.'
-      );
-
-      // Verify the merkle proof.
-      bytes32 node = keccak256(
-        abi.encodePacked(tokenClaim[i].index, onBehalfOf, tokenClaim[i].amount)
-      );
-      require(
-        MerkleProof.verify(
-          tokenClaim[i].merkleProof,
-          _distributions[tokenClaim[i].distributionId].merkleRoot,
-          node
-        ),
-        'MerkleDistributor: Invalid proof.'
-      );
-
-      // Mark it claimed and send the token.
-      _setClaimed(tokenClaim[i].index, tokenClaim[i].distributionId);
+      // redeem claim
+      _redeemClaim(tokenClaim[i], onBehalfOf);
+      // transfer tokens
       IERC20(_distributions[tokenClaim[i].distributionId].token).safeTransfer(
         receiver,
         tokenClaim[i].amount
-      );
-
-      emit Claimed(
-        tokenClaim[i].index,
-        onBehalfOf,
-        tokenClaim[i].amount,
-        tokenClaim[i].distributionId
       );
     }
   }
