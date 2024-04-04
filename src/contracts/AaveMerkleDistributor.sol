@@ -61,36 +61,47 @@ contract AaveMerkleDistributor is Ownable, IAaveMerkleDistributor, Rescuable {
   }
 
   /// @inheritdoc IAaveMerkleDistributor
-  function claim(TokenClaim[] calldata claim) external override {
-    for (uint256 i = 0; i < claim.length; i++) {
+  function claim(TokenClaim[] calldata tokenClaim) external override {
+    _claim(tokenClaim, msg.sender, msg.sender);
+  }
+
+  function _claim(TokenClaim[] calldata tokenClaim, address onBehalfOf, address receiver) internal {
+    for (uint256 i = 0; i < tokenClaim.length; i++) {
       require(
-        claim[i].distributionId < _nextDistributionId,
+        tokenClaim[i].distributionId < _nextDistributionId,
         'MerkleDistributor: Distribution dont exist'
       );
       require(
-        !isClaimed(claim[i].index, claim[i].distributionId),
+        !isClaimed(tokenClaim[i].index, tokenClaim[i].distributionId),
         'MerkleDistributor: Drop already claimed.'
       );
 
       // Verify the merkle proof.
-      bytes32 node = keccak256(abi.encodePacked(claim[i].index, msg.sender, claim[i].amount));
+      bytes32 node = keccak256(
+        abi.encodePacked(tokenClaim[i].index, onBehalfOf, tokenClaim[i].amount)
+      );
       require(
         MerkleProof.verify(
-          claim[i].merkleProof,
-          _distributions[claim[i].distributionId].merkleRoot,
+          tokenClaim[i].merkleProof,
+          _distributions[tokenClaim[i].distributionId].merkleRoot,
           node
         ),
         'MerkleDistributor: Invalid proof.'
       );
 
       // Mark it claimed and send the token.
-      _setClaimed(claim[i].index, claim[i].distributionId);
-      IERC20(_distributions[claim[i].distributionId].token).safeTransfer(
-        msg.sender,
-        claim[i].amount
+      _setClaimed(tokenClaim[i].index, tokenClaim[i].distributionId);
+      IERC20(_distributions[tokenClaim[i].distributionId].token).safeTransfer(
+        receiver,
+        tokenClaim[i].amount
       );
 
-      emit Claimed(claim[i].index, msg.sender, claim[i].amount, claim[i].distributionId);
+      emit Claimed(
+        tokenClaim[i].index,
+        onBehalfOf,
+        tokenClaim[i].amount,
+        tokenClaim[i].distributionId
+      );
     }
   }
 
