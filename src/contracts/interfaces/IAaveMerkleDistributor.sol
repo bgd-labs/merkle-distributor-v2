@@ -79,10 +79,29 @@ interface IAaveMerkleDistributor {
   function isClaimed(uint256 index, uint256 distributionId) external view returns (bool);
 
   /**
-   * @dev Claim the given amount of the token to the given address. Reverts if the inputs are invalid.
-   * @param claim array of the information of the tokens to claim
+   * @dev Claim the given amount of the token to the msg.sender address. Reverts if the inputs are invalid.
+   * @param tokenClaim array of the information of the tokens to claim
    */
-  function claim(TokenClaim[] calldata claim) external;
+  function claim(TokenClaim[] calldata tokenClaim) external;
+
+  /**
+   * @dev Claim the given amount of the token to the given receiver address. Reverts if the inputs are invalid.
+   * @param tokenClaim array of the information of the tokens to claim
+   * @param receiver address receiving the claim
+   */
+  function claim(TokenClaim[] calldata tokenClaim, address receiver) external;
+
+  /**
+   * @dev Claim the given amount of the token to the given address. Reverts if the inputs are invalid.
+   * @param tokenClaim array of the information of the tokens to claim
+   * @param onBehalfOf address of the eligible receiver of the claim
+   * @param receiver address receiving the claim
+   */
+  function claimOnBehalfOf(
+    TokenClaim[] calldata tokenClaim,
+    address onBehalfOf,
+    address receiver
+  ) external;
 
   /**
    * @dev adds the pair of token and merkleRoot as new distributions
